@@ -1,10 +1,10 @@
 #!/bin/sh
+set -e # Salir inmediatamente si un comando falla
 
-# ¡Paso Clave Añadido!
-# Forzamos la generación del cliente de Prisma cada vez que el contenedor arranca.
-# Esto garantiza que el cliente siempre estará disponible para NestJS.
+# Forzamos la generación del cliente de Prisma al arrancar el contenedor.
 echo "Forcing Prisma Client generation..."
 npx prisma generate
+echo "Prisma Client generated successfully."
 
 # Inicia la aplicación NestJS en segundo plano
 echo "Starting NestJS app..."
