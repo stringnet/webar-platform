@@ -19,6 +19,11 @@ COPY . .
 # Ejecutamos prisma generate explícitamente DESPUÉS de tener todos los archivos
 RUN npx prisma generate
 
+# ¡LÍNEA CLAVE AÑADIDA!
+# Ejecutamos la migración para crear/actualizar las tablas en la base de datos.
+# Esto soluciona el error "The table public.User does not exist".
+RUN npx prisma migrate deploy
+
 # Construimos la aplicación
 RUN npm run build
 
