@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
-  // CORRECCIÓN FINAL: Le decimos a Prisma que use el motor para Debian con OpenSSL 3.0.x
+  // CORRECCIÓN FINAL: Usamos el motor para Debian con OpenSSL 3.0.x, 
+  // que es el que incluye la imagen de Docker node:18-slim.
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
