@@ -1,40 +1,42 @@
-# Usamos una base de Debian estándar y robusta
-FROM node:18-slim
+# Dockerfile Final y de Producción para la API
 
-# --- ¡LÍNEAS CLAVE AÑADIDAS! ---
-# 1. Declaramos que vamos a recibir un "argumento de construcción" llamado DATABASE_URL desde Easypanel.
-ARG DATABASE_URL
-# 2. Convertimos ese argumento en una variable de entorno para que los comandos RUN la puedan usar.
-ENV DATABASE_URL=$DATABASE_URL
-# ------------------------------------
-
-# Instala OpenSSL explícitamente, por si acaso.
-# -y confirma automáticamente todas las instalaciones.
-RUN apt-get update -y && apt-get install -y openssl
+# --- Etapa 1: Build ---
+# En esta etapa, instalamos todas las dependencias y construimos la aplicación.
+FROM node:18-slim as builder
 
 WORKDIR /usr/src/app
 
-# Copiamos primero package.json y package-lock.json para aprovechar el caché de Docker
 COPY package*.json ./
-
-# Instalamos las dependencias
 RUN npm install
 
-# Copiamos el resto de los archivos, incluyendo el schema de Prisma
 COPY . .
 
-# Ejecutamos prisma generate explícitamente DESPUÉS de tener todos los archivos
-RUN npx prisma generate
-
-# Ejecutamos la migración para crear/actualizar las tablas en la base de datos.
-# Esto soluciona el error "The table public.User does not exist".
-RUN npx prisma migrate deploy
-
-# Construimos la aplicación
+# Construimos la aplicación de NestJS
 RUN npm run build
 
-# Exponemos el puerto donde correrá NestJS
-EXPOSE 3000
 
-# El comando final para arrancar la aplicación
-CMD ["node", "dist/main"]
+# --- Etapa 2: Production ---
+# Empezamos con una imagen fresca y limpia para mantener el tamaño bajo.
+FROM node:18-slim
+
+WORKDIR /usr/src/app
+
+# Instalamos SOLAMENTE Nginx y OpenSSL, ya que Node.js ya viene en la imagen.
+RUN apt-get update -y && apt-get install -y nginx openssl
+
+# Copiamos solo los artefactos necesarios desde la etapa 'builder'.
+# Esto hace que nuestra imagen final sea más pequeña y segura.
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/prisma ./prisma
+
+# Copiamos nuestra configuración de Nginx y el script de arranque.
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./entrypoint.sh .
+RUN chmod +x ./entrypoint.sh
+
+# Exponemos el puerto de Nginx (nuestra puerta de entrada).
+EXPOSE 80
+
+# El comando de inicio es nuestro script, que se encargará de todo.
+CMD ["./entrypoint.sh"]
