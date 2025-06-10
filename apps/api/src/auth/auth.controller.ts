@@ -1,13 +1,12 @@
-// apps/api/src/auth/auth.controller.ts
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './auth.dto';
 
-@Controller('auth') // <-- ¿Está escrito 'auth' correctamente?
+@Controller('auth') // <-- Asegúrate de que esto sea 'auth'
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post('signup') // <-- ¿Está escrito 'signup' correctamente?
+  @Post('signup') // <-- Y esto sea 'signup'
   signup(@Body() dto: AuthDto) {
     return this.authService.signup(dto);
   }
