@@ -1,0 +1,5 @@
+// apps/api/.prettierrc
+{
+  "singleQuote": true,
+  "trailingComma": "all"
+}
