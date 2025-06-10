@@ -1,9 +1,9 @@
+// apps/api/src/main.ts
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module'; // Esta ruta también debe ser correcta
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Habilitar CORS aquí en el futuro si es necesario
   await app.listen(3000);
 }
 bootstrap();
