@@ -1,10 +1,9 @@
 generator client {
-  provider      = "prisma-client-js"
-  // CORRECCIÓN: Usamos el target específico para OpenSSL 3.0.x
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
+  // CORRECCIÓN FINAL: Le decimos a Prisma que use el motor para Debian con OpenSSL 3.0.x
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
-// ... el resto del archivo no cambia ...
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
