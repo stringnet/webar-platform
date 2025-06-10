@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
-  // CORRECCIÓN: El nombre correcto para el motor de Alpine Linux es "linux-musl"
-  binaryTargets = ["native", "linux-musl"]
+  provider      = "prisma-client-js"
+  // CORRECCIÓN: Usamos el target específico para OpenSSL 3.0.x
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
-// El resto de tu archivo no cambia...
+// ... el resto del archivo no cambia ...
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
