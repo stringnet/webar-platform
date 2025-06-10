@@ -1,42 +1,29 @@
 # Dockerfile Final y de Producción para la API
-
 # --- Etapa 1: Build ---
-# En esta etapa, instalamos todas las dependencias y construimos la aplicación.
 FROM node:18-slim as builder
-
 WORKDIR /usr/src/app
 
 COPY package*.json ./
 RUN npm install
-
 COPY . .
-
-# Construimos la aplicación de NestJS
 RUN npm run build
 
-
 # --- Etapa 2: Production ---
-# Empezamos con una imagen fresca y limpia para mantener el tamaño bajo.
 FROM node:18-slim
-
 WORKDIR /usr/src/app
 
-# Instalamos SOLAMENTE Nginx y OpenSSL, ya que Node.js ya viene en la imagen.
-RUN apt-get update -y && apt-get install -y nginx openssl
+RUN apt-get update && apt-get install -y nginx openssl
 
-# Copiamos solo los artefactos necesarios desde la etapa 'builder'.
-# Esto hace que nuestra imagen final sea más pequeña y segura.
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 
-# Copiamos nuestra configuración de Nginx y el script de arranque.
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./entrypoint.sh .
 RUN chmod +x ./entrypoint.sh
 
-# Exponemos el puerto de Nginx (nuestra puerta de entrada).
+# La puerta de entrada pública es el puerto 80 de Nginx
 EXPOSE 80
 
-# El comando de inicio es nuestro script, que se encargará de todo.
+# El script de arranque se encarga de todo
 CMD ["./entrypoint.sh"]
