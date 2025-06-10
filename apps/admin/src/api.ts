@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Vite expone las variables de entorno en el objeto import.meta.env
 // Usamos la URL de producción como fallback por si la variable no está definida.
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://api.webra.scanmee.io';
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://apiwebra.scanmee.io';
 
 const api = axios.create({
   baseURL: baseURL,
