@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-# La generación de Prisma ya está en el entrypoint, así que aquí solo construimos
+# La generación de Prisma se hace en el script de arranque, aquí solo construimos
 RUN npm run build
 
 
@@ -15,8 +15,8 @@ RUN npm run build
 FROM nginx:alpine
 
 # ¡LÍNEA CLAVE CORREGIDA!
-# Instalamos Node.js, npm, Y la librería de compatibilidad de OpenSSL 1.1 que Prisma necesita
-RUN apk add --no-cache nodejs npm openssl1.1-compat
+# Instalamos Node.js, npm, Y la librería libssl3, que es la correcta para OpenSSL 3.x en Alpine
+RUN apk add --no-cache nodejs npm libssl3
 
 WORKDIR /usr/src/app
 
