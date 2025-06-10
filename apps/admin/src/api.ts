@@ -1,17 +1,17 @@
-// apps/admin/src/api.ts
 import axios from 'axios';
 
+// Vite expone las variables de entorno en el objeto import.meta.env
+// Usamos la URL de producción como fallback por si la variable no está definida.
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://api.webra.scanmee.io';
+
 const api = axios.create({
-  baseURL: 'https://api.webra.scanmee.io', // La URL de tu API desplegada
+  baseURL: baseURL,
 });
 
-// ¡Esto es un interceptor! Se ejecuta ANTES de cada petición.
+// El interceptor sigue igual
 api.interceptors.request.use(
   (config) => {
-    // 1. Obtiene el token del localStorage
     const token = localStorage.getItem('accessToken');
-
-    // 2. Si el token existe, lo añade a las cabeceras (headers)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
