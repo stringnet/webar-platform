@@ -2,21 +2,20 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// Ya no necesitamos ConfigService para esta prueba
+// import { ConfigService } from '@nestjs/config'; 
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const configService = app.get(ConfigService);
-  const clientUrl = configService.get<string>('CORS_ORIGIN');
-
-  // --- ESTA ES LA PARTE CRÍTICA ---
+  // --- CONFIGURACIÓN DE CORS SIMPLIFICADA ---
+  // En lugar de leer de una variable, ponemos la URL directamente para la prueba.
   app.enableCors({
-    origin: clientUrl,
+    origin: 'https://adminwebra.scanmee.io', // URL escrita directamente
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
-  // --------------------------------
+  // -----------------------------------------
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -24,7 +23,7 @@ async function bootstrap() {
     transform: true,
   }));
 
-  const port = configService.get<number>('PORT') || 3000;
-  await app.listen(port);
+  // Para esta prueba, también podemos fijar el puerto.
+  await app.listen(3000);
 }
 bootstrap();
