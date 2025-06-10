@@ -1,4 +1,3 @@
-// apps/api/src/app.module.ts
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
@@ -8,7 +7,7 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    AuthModule, // <-- ¿Está AuthModule aquí en la lista?
+    AuthModule, // <-- Asegúrate de que esta línea exista
   ],
 })
 export class AppModule {}
