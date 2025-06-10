@@ -7,33 +7,30 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-
-# Ya no necesitamos generar prisma aquí, lo haremos al arrancar
+# La generación de Prisma ya está en el entrypoint, así que aquí solo construimos
 RUN npm run build
 
 
 # --- Etapa 2: Production ---
 FROM nginx:alpine
 
-# Instalamos Node.js y npm para poder ejecutar los comandos
-RUN apk add --no-cache nodejs npm
+# ¡LÍNEA CLAVE CORREGIDA!
+# Instalamos Node.js, npm, Y la librería de compatibilidad de OpenSSL 1.1 que Prisma necesita
+RUN apk add --no-cache nodejs npm openssl1.1-compat
 
 WORKDIR /usr/src/app
 
 # Copiamos las dependencias y el código construido desde la etapa 'builder'
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
-# Aún necesitamos el schema para generar el cliente al arranque
 COPY --from=builder /usr/src/app/prisma ./prisma 
 
 # Copiamos nuestra configuración de Nginx y el script de arranque
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./entrypoint.sh .
 
-# Le damos permisos de ejecución al script
 RUN chmod +x ./entrypoint.sh
 
 EXPOSE 80
 
-# El comando de inicio es nuestro script
 CMD ["./entrypoint.sh"]
