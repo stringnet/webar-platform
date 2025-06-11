@@ -1,7 +1,8 @@
+// apps/api/src/projects/projects.controller.ts
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { JwtGuard } from '../auth/guard'; // Importaremos el guardián de seguridad
+import { JwtGuard } from '../auth/guard'; // <-- Esta línea ahora funciona
 
-@UseGuards(JwtGuard) // <-- ¡IMPORTANTE! Esto protege todas las rutas de este controlador
+@UseGuards(JwtGuard)
 @Controller('projects')
 export class ProjectsController {
   @Get()
