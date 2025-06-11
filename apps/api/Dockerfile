@@ -11,9 +11,9 @@ RUN npm install
 
 COPY . .
 
-# AÑADIMOS ESTA LÍNEA DE VERIFICACIÓN
-# Generamos el cliente aquí para asegurar que el schema sea válido antes de construir.
-RUN npx prisma generate
+# --- LÍNEA CORREGIDA ---
+# Usamos npm run para ejecutar el script de forma segura y evitar el error "command not found".
+RUN npm run prisma:generate
 
 # Construimos la aplicación de NestJS
 RUN npm run build

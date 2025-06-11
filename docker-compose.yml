@@ -1,0 +1,20 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  # Definimos nuestro servicio de base de datos local
+  db:
+    image: postgres:15 # Usamos una imagen oficial de PostgreSQL
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword # Una contraseña simple para desarrollo
+      POSTGRES_DB: webar_dev
+    ports:
+      # Mapeamos el puerto 5433 de nuestra PC al puerto 5432 del contenedor
+      - "5433:5432" 
+    volumes:
+      # Esto guarda los datos de tu DB local en una carpeta para que no se borren
+      - ./postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
