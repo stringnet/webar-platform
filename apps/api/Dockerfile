@@ -9,6 +9,11 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install
 
+# --- ¡LÍNEA CLAVE AÑADIDA! ---
+# Damos permisos de ejecución explícitos al ejecutable de Prisma.
+# Esto soluciona el error "Permission denied".
+RUN chmod +x /usr/src/app/node_modules/.bin/prisma
+
 COPY . .
 
 # --- LÍNEA CORREGIDA ---
