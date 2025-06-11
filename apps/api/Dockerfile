@@ -14,7 +14,7 @@ COPY . .
 # --- ¡LÍNEA CLAVE AÑADIDA! ---
 # Damos permisos de ejecución explícitos al ejecutable de Prisma.
 # Esto soluciona el error "Permission denied".
-RUN chmod +x /usr/src/app/node_modules/.bin/prisma
+RUN chmod +x /usr/src/app/node_modules/.bin/*
 
 # --- LÍNEA CORREGIDA ---
 # Usamos npm run para ejecutar el script de forma segura y evitar el error "command not found".
