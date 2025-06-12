@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import CreateProjectPage from './pages/CreateProjectPage'; // <-- 1. Importa la nueva página
 
 function App() {
   return (
@@ -10,14 +11,11 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        {/* Ruta por defecto podría ser el login o el dashboard si ya está logueado */}
+        <Route path="/projects/new" element={<CreateProjectPage />} /> // <-- 2. Añade la nueva ruta
         <Route path="/" element={<LoginPage />} /> 
       </Routes>
     </BrowserRouter>
   );
 }
-
-// Crea los archivos para las páginas que faltan
-// pages/LoginPage.tsx, pages/RegisterPage.tsx, pages/DashboardPage.tsx
 
 export default App;

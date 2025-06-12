@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Container, Typography, Box, CircularProgress, Alert, List, ListItem, ListItemText, Button, Divider } from '@mui/material';
 import api from '../api';
+import { Link as RouterLink } from 'react-router-dom'; // <-- 1. IMPORT AÑADIDO
 
 // Definimos un tipo para nuestros proyectos para que TypeScript sepa cómo son
 interface ARProject {
@@ -17,10 +18,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await api.get('/projects');
+        const response = await api.get<ARProject[]>('/projects');
         setProjects(response.data);
       } catch (err) {
-        setError('No se pudieron cargar los proyectos.');
+        setError('No se pudieron cargar los proyectos. Intenta recargar la página.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -41,18 +42,29 @@ export default function DashboardPage() {
 
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5">Mis Proyectos</Typography>
-          <Button variant="contained" color="primary">Crear Nuevo Proyecto</Button>
+          {/* --- 2. BOTÓN ACTUALIZADO --- */}
+          <Button
+            component={RouterLink}
+            to="/projects/new"
+            variant="contained"
+            color="primary"
+          >
+            Crear Nuevo Proyecto
+          </Button>
         </Box>
 
         <Divider sx={{ my: 2 }} />
 
         {loading && <CircularProgress />}
+        
         {error && <Alert severity="error">{error}</Alert>}
         
         {!loading && !error && (
           <List>
             {projects.length === 0 ? (
-              <Typography sx={{ mt: 2 }}>No tienes proyectos todavía. ¡Crea uno nuevo!</Typography>
+               <ListItem>
+                <ListItemText primary="No tienes proyectos todavía. ¡Haz clic en el botón para crear el primero!" />
+              </ListItem>
             ) : (
               projects.map((project) => (
                 <ListItem key={project.id} disablePadding>
