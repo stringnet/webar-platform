@@ -1,8 +1,10 @@
+// apps/admin/src/App.tsx
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import CreateProjectPage from './pages/CreateProjectPage'; // <-- 1. Importa la nueva página
+import CreateProjectPage from './pages/CreateProjectPage';
 
 function App() {
   return (
@@ -11,8 +13,11 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/projects/new" element={<CreateProjectPage />} /> // <-- 2. Añade la nueva ruta
-        <Route path="/" element={<LoginPage />} /> 
+        
+        {/* --- RUTA CORREGIDA (sin el comentario inválido) --- */}
+        <Route path="/projects/new" element={<CreateProjectPage />} />
+        
+        <Route path="/" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>
   );
