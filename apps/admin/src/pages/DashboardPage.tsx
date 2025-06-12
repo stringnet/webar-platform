@@ -1,29 +1,33 @@
-import { useState, useEffect } from 'react';
-import { Container, Typography, Box, CircularProgress, Alert } from '@mui/material';
-import api from '../api'; // Nuestra instancia de Axios
+import React, { useState, useEffect } from 'react';
+import { Container, Typography, Box, CircularProgress, Alert, List, ListItem, ListItemText, Button, Divider } from '@mui/material';
+import api from '../api';
+
+// Definimos un tipo para nuestros proyectos para que TypeScript sepa cómo son
+interface ARProject {
+  id: string;
+  name: string;
+  // Añade más campos aquí a medida que los necesites
+}
 
 export default function DashboardPage() {
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<ARProject[]>([]); // Usamos el tipo aquí
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Esta función se ejecuta cuando el componente se carga
     const fetchProjects = async () => {
       try {
-        // Hacemos la llamada al nuevo endpoint protegido
         const response = await api.get('/projects');
-        setProjects(response.data); // Guardamos la respuesta en el estado
+        setProjects(response.data);
       } catch (err) {
         setError('No se pudieron cargar los proyectos.');
         console.error(err);
       } finally {
-        setLoading(false); // Dejamos de cargar, ya sea con éxito o con error
+        setLoading(false);
       }
     };
-
     fetchProjects();
-  }, []); // El array vacío asegura que solo se ejecute una vez
+  }, []);
 
   return (
     <Container>
@@ -35,21 +39,29 @@ export default function DashboardPage() {
           Has iniciado sesión correctamente. Desde aquí podrás gestionar tus proyectos de Realidad Aumentada.
         </Typography>
 
-        <Box sx={{ mt: 4 }}>
+        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5">Mis Proyectos</Typography>
-          {loading && <CircularProgress sx={{ mt: 2 }} />}
-          {error && <Alert severity="error">{error}</Alert>}
-          {!loading && !error && (
-            <>
-              {projects.length === 0 ? (
-                <Typography sx={{ mt: 2 }}>No tienes proyectos todavía. ¡Crea uno nuevo!</Typography>
-              ) : (
-                <p>Aquí mostraremos la lista de proyectos...</p>
-                // Aquí iría la lista o tabla de proyectos en el futuro
-              )}
-            </>
-          )}
+          <Button variant="contained" color="primary">Crear Nuevo Proyecto</Button>
         </Box>
+
+        <Divider sx={{ my: 2 }} />
+
+        {loading && <CircularProgress />}
+        {error && <Alert severity="error">{error}</Alert>}
+        
+        {!loading && !error && (
+          <List>
+            {projects.length === 0 ? (
+              <Typography sx={{ mt: 2 }}>No tienes proyectos todavía. ¡Crea uno nuevo!</Typography>
+            ) : (
+              projects.map((project) => (
+                <ListItem key={project.id} disablePadding>
+                  <ListItemText primary={project.name} secondary={`ID: ${project.id}`} />
+                </ListItem>
+              ))
+            )}
+          </List>
+        )}
       </Box>
     </Container>
   );
