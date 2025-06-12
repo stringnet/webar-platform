@@ -1,7 +1,9 @@
+// apps/admin/src/pages/CreateProjectPage.tsx
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Box, TextField, Button, Alert } from '@mui/material';
-import api from '../api';
+// import api from '../api'; // <-- LÍNEA CORREGIDA: La comentamos temporalmente
 
 export default function CreateProjectPage() {
   const [projectName, setProjectName] = useState('');
@@ -20,19 +22,6 @@ export default function CreateProjectPage() {
     alert('Proyecto creado (simulación). Ahora implementaremos la llamada a la API.');
     navigate('/dashboard');
     // -----------------------------------------------------------
-
-    // En el futuro, aquí iría la llamada a la API:
-    /*
-    try {
-      // await api.post('/projects', { name: projectName, ...otrosDatos });
-      navigate('/dashboard'); // Volver al dashboard si es exitoso
-    } catch (err) {
-      setError('No se pudo crear el proyecto.');
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-    */
   };
 
   return (
