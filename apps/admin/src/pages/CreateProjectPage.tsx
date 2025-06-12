@@ -1,9 +1,7 @@
-// apps/admin/src/pages/CreateProjectPage.tsx
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Box, TextField, Button, Alert } from '@mui/material';
-// import api from '../api'; // <-- LÍNEA CORREGIDA: La comentamos temporalmente
+import api from '../api'; // <-- Ahora sí lo vamos a usar
 
 export default function CreateProjectPage() {
   const [projectName, setProjectName] = useState('');
@@ -16,12 +14,19 @@ export default function CreateProjectPage() {
     setIsSubmitting(true);
     setError('');
 
-    // --- Lógica para llamar a la API (la implementaremos después) ---
-    console.log('Nombre del proyecto a crear:', projectName);
-    // Por ahora, solo simulamos que funciona y volvemos al dashboard
-    alert('Proyecto creado (simulación). Ahora implementaremos la llamada a la API.');
-    navigate('/dashboard');
-    // -----------------------------------------------------------
+    // --- LÓGICA REAL AÑADIDA ---
+    try {
+      // Llamamos al endpoint POST /projects con el nombre del proyecto
+      await api.post('/projects', { name: projectName });
+      // Si todo va bien, volvemos al dashboard
+      navigate('/dashboard');
+    } catch (err) {
+      setError('No se pudo crear el proyecto. Inténtalo de nuevo.');
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+    // -------------------------
   };
 
   return (
@@ -45,6 +50,7 @@ export default function CreateProjectPage() {
             autoFocus
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
+            disabled={isSubmitting}
           />
 
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
@@ -53,13 +59,14 @@ export default function CreateProjectPage() {
             <Button
               type="submit"
               variant="contained"
-              disabled={isSubmitting}
+              disabled={!projectName || isSubmitting}
             >
               {isSubmitting ? 'Creando...' : 'Crear Proyecto'}
             </Button>
             <Button
               variant="outlined"
               onClick={() => navigate('/dashboard')}
+              disabled={isSubmitting}
             >
               Cancelar
             </Button>
