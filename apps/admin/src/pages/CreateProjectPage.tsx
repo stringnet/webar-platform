@@ -21,19 +21,24 @@ export default function CreateProjectPage() {
     }
   };
 
+  // Función para subir un archivo a MinIO usando nuestra API
   const uploadFile = async (file: File): Promise<string> => {
     // 1. Pedir la URL segura a nuestra API
     const { data } = await api.post('/storage/upload-url', { fileName: file.name });
     const { presignedUrl, objectName } = data;
 
     // 2. Subir el archivo directamente a MinIO con la URL pre-firmada
-    await fetch(presignedUrl, {
+    const response = await fetch(presignedUrl, {
       method: 'PUT',
       body: file,
       headers: {
         'Content-Type': file.type,
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`Error al subir el archivo: ${file.name}`);
+    }
 
     // 3. Devolver el nombre final del objeto para guardarlo en la DB
     return objectName;
@@ -49,17 +54,17 @@ export default function CreateProjectPage() {
     setError('');
 
     try {
-      // Subir ambos archivos en paralelo
+      // Subimos ambos archivos en paralelo para más eficiencia
       const [markerObjectName, contentObjectName] = await Promise.all([
         uploadFile(markerFile),
         uploadFile(contentFile),
       ]);
 
-      // Una vez subidos, crear el proyecto en nuestra base de datos
+      // Una vez subidos, creamos el proyecto en nuestra base de datos
       await api.post('/projects', {
         name: projectName,
-        markerUrl: markerObjectName,
-        contentUrl: contentObjectName,
+        markerUrl: markerObjectName, // <-- Ahora enviamos el nombre del objeto en MinIO
+        contentUrl: contentObjectName, // <-- Y el del contenido también
       });
 
       navigate('/dashboard');
@@ -88,10 +93,11 @@ export default function CreateProjectPage() {
               autoFocus
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
+              disabled={isSubmitting}
             />
 
             <Box>
-              <Button variant="outlined" onClick={() => markerInputRef.current?.click()}>
+              <Button variant="outlined" onClick={() => markerInputRef.current?.click()} disabled={isSubmitting}>
                 Seleccionar Marcador (Imagen)
               </Button>
               <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>
@@ -107,7 +113,7 @@ export default function CreateProjectPage() {
             </Box>
 
             <Box>
-              <Button variant="outlined" onClick={() => contentInputRef.current?.click()}>
+              <Button variant="outlined" onClick={() => contentInputRef.current?.click()} disabled={isSubmitting}>
                 Seleccionar Contenido (GLB, GLTF, Video)
               </Button>
                <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>
