@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, Box, TextField, Button, Alert, CircularProgress, Paper, Stack } from '@mui/material';
+import { Container, Typography, Box, TextField, Button, Alert, CircularProgress, Paper, Stack, LinearProgress } from '@mui/material';
 import api from '../api';
 
 export default function CreateProjectPage() {
@@ -9,9 +9,10 @@ export default function CreateProjectPage() {
   const [contentFile, setContentFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0); // Para mostrar el progreso
+
   const navigate = useNavigate();
 
-  // Referencias a los inputs de archivo ocultos
   const markerInputRef = useRef<HTMLInputElement>(null);
   const contentInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,24 +24,19 @@ export default function CreateProjectPage() {
 
   // Función para subir un archivo a MinIO usando nuestra API
   const uploadFile = async (file: File): Promise<string> => {
-    // 1. Pedir la URL segura a nuestra API
     const { data } = await api.post('/storage/upload-url', { fileName: file.name });
     const { presignedUrl, objectName } = data;
 
-    // 2. Subir el archivo directamente a MinIO con la URL pre-firmada
-    const response = await fetch(presignedUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
+    await api.put(presignedUrl, file, {
+      headers: { 'Content-Type': file.type },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            // Actualizaremos el progreso total (aproximado, 50% por cada archivo)
+            setUploadProgress(prev => prev + (percentCompleted / 2));
+        }
       },
     });
-
-    if (!response.ok) {
-      throw new Error(`Error al subir el archivo: ${file.name}`);
-    }
-
-    // 3. Devolver el nombre final del objeto para guardarlo en la DB
     return objectName;
   };
 
@@ -52,24 +48,28 @@ export default function CreateProjectPage() {
     }
     setIsSubmitting(true);
     setError('');
+    setUploadProgress(0); // Reinicia el progreso
 
     try {
-      // Subimos ambos archivos en paralelo para más eficiencia
+      console.log('Iniciando subida de archivos...');
       const [markerObjectName, contentObjectName] = await Promise.all([
         uploadFile(markerFile),
         uploadFile(contentFile),
       ]);
+      console.log('Archivos subidos. Creando proyecto en la base de datos...');
 
-      // Una vez subidos, creamos el proyecto en nuestra base de datos
+      // --- ¡ESTE ES EL PASO CRÍTICO QUE FALTABA! ---
+      // Una vez subidos los archivos, creamos el proyecto en nuestra base de datos
       await api.post('/projects', {
         name: projectName,
-        markerUrl: markerObjectName, // <-- Ahora enviamos el nombre del objeto en MinIO
-        contentUrl: contentObjectName, // <-- Y el del contenido también
+        markerUrl: markerObjectName,
+        contentUrl: contentObjectName,
       });
+      console.log('Proyecto creado exitosamente.');
 
       navigate('/dashboard');
     } catch (err) {
-      setError('No se pudo crear el proyecto. Inténtalo de nuevo.');
+      setError('No se pudo crear el proyecto. Revisa la consola para más detalles.');
       console.error(err);
     } finally {
       setIsSubmitting(false);
@@ -84,59 +84,33 @@ export default function CreateProjectPage() {
         </Typography>
         <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3, mt: 3 }}>
           <Stack spacing={3}>
-            <TextField
-              required
-              fullWidth
-              id="projectName"
-              label="Nombre del Proyecto"
-              name="projectName"
-              autoFocus
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              disabled={isSubmitting}
-            />
-
+            <TextField required fullWidth id="projectName" label="Nombre del Proyecto" value={projectName} onChange={(e) => setProjectName(e.target.value)} disabled={isSubmitting} />
             <Box>
               <Button variant="outlined" onClick={() => markerInputRef.current?.click()} disabled={isSubmitting}>
                 Seleccionar Marcador (Imagen)
               </Button>
-              <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>
-                {markerFile?.name || 'Ningún archivo seleccionado'}
-              </Typography>
-              <input
-                type="file"
-                ref={markerInputRef}
-                hidden
-                accept="image/*"
-                onChange={(e) => handleFileSelect(e, setMarkerFile)}
-              />
+              <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>{markerFile?.name || 'Ningún archivo'}</Typography>
+              <input type="file" ref={markerInputRef} hidden accept="image/*" onChange={(e) => handleFileSelect(e, setMarkerFile)} />
             </Box>
-
             <Box>
               <Button variant="outlined" onClick={() => contentInputRef.current?.click()} disabled={isSubmitting}>
-                Seleccionar Contenido (GLB, GLTF, Video)
+                Seleccionar Contenido (GLB, GLTF, MP4)
               </Button>
-               <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>
-                {contentFile?.name || 'Ningún archivo seleccionado'}
-              </Typography>
-              <input
-                type="file"
-                ref={contentInputRef}
-                hidden
-                accept=".glb,.gltf,.mp4"
-                onChange={(e) => handleFileSelect(e, setContentFile)}
-              />
+              <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>{contentFile?.name || 'Ningún archivo'}</Typography>
+              <input type="file" ref={contentInputRef} hidden accept=".glb,.gltf,.mp4" onChange={(e) => handleFileSelect(e, setContentFile)} />
             </Box>
-
+            {isSubmitting && (
+              <Box sx={{ width: '100%' }}>
+                <LinearProgress variant="determinate" value={uploadProgress} />
+                <Typography variant="body2" sx={{ textAlign: 'center', mt: 1 }}>Subiendo archivos... {Math.round(uploadProgress)}%</Typography>
+              </Box>
+            )}
             {error && <Alert severity="error">{error}</Alert>}
-
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button type="submit" variant="contained" disabled={!projectName || !markerFile || !contentFile || isSubmitting}>
-                {isSubmitting ? <CircularProgress size={24} /> : 'Crear Proyecto'}
+                {isSubmitting ? 'Creando...' : 'Crear Proyecto'}
               </Button>
-              <Button variant="text" onClick={() => navigate('/dashboard')} disabled={isSubmitting}>
-                Cancelar
-              </Button>
+              <Button variant="text" onClick={() => navigate('/dashboard')} disabled={isSubmitting}>Cancelar</Button>
             </Box>
           </Stack>
         </Paper>
