@@ -1,23 +1,24 @@
 import { Controller, Post, UseGuards, Body } from '@nestjs/common';
 import { JwtGuard } from '../auth/guard';
 import { StorageService } from './storage.service';
-import { GenerateUploadUrlDto } from './dto';
 import { GetUser } from '../auth/decorator';
 import { User } from '@prisma/client';
 
-@UseGuards(JwtGuard) // Protegemos el controlador
+// DTO para validar el request
+import { IsNotEmpty, IsString } from 'class-validator';
+export class UploadUrlDto {
+  @IsString()
+  @IsNotEmpty()
+  fileName: string;
+}
+
+@UseGuards(JwtGuard)
 @Controller('storage')
 export class StorageController {
   constructor(private storageService: StorageService) {}
 
   @Post('upload-url')
-  generateUploadUrl(
-    @GetUser() user: User,
-    @Body() dto: GenerateUploadUrlDto,
-  ) {
-    return this.storageService.generatePresignedUploadUrl(
-      dto.fileName,
-      user.id,
-    );
+  generateUploadUrl(@GetUser() user: User, @Body() dto: UploadUrlDto) {
+    return this.storageService.generatePresignedUploadUrl(dto.fileName, user.id);
   }
 }
