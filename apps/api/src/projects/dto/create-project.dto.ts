@@ -1,9 +1,15 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsUrl } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  // En el futuro aquí añadiremos markerUrl, contentUrl, etc.
+  @IsString()
+  @IsNotEmpty()
+  markerUrl: string; // <-- AÑADIDO
+
+  @IsString()
+  @IsNotEmpty()
+  contentUrl: string; // <-- AÑADIDO
 }
