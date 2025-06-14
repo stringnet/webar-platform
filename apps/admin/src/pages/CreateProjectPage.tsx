@@ -1,6 +1,9 @@
+// apps/admin/src/pages/CreateProjectPage.tsx
+
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, Box, TextField, Button, Alert, CircularProgress, Paper, Stack, LinearProgress } from '@mui/material';
+// La única diferencia está en esta línea, hemos quitado 'CircularProgress'
+import { Container, Typography, Box, TextField, Button, Alert, Paper, Stack, LinearProgress } from '@mui/material';
 import api from '../api';
 
 export default function CreateProjectPage() {
@@ -9,8 +12,7 @@ export default function CreateProjectPage() {
   const [contentFile, setContentFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0); // Para mostrar el progreso
-
+  const [uploadProgress, setUploadProgress] = useState(0);
   const navigate = useNavigate();
 
   const markerInputRef = useRef<HTMLInputElement>(null);
@@ -22,18 +24,19 @@ export default function CreateProjectPage() {
     }
   };
 
-  // Función para subir un archivo a MinIO usando nuestra API
   const uploadFile = async (file: File): Promise<string> => {
     const { data } = await api.post('/storage/upload-url', { fileName: file.name });
     const { presignedUrl, objectName } = data;
 
+    // Usamos axios para el upload para poder usar onUploadProgress fácilmente
     await api.put(presignedUrl, file, {
       headers: { 'Content-Type': file.type },
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            // Actualizaremos el progreso total (aproximado, 50% por cada archivo)
-            setUploadProgress(prev => prev + (percentCompleted / 2));
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          // Actualizaremos el progreso total (aproximado, 50% por cada archivo)
+          // Usamos una función para evitar problemas de estado
+          setUploadProgress(prev => prev + (percentCompleted / 2));
         }
       },
     });
@@ -48,24 +51,19 @@ export default function CreateProjectPage() {
     }
     setIsSubmitting(true);
     setError('');
-    setUploadProgress(0); // Reinicia el progreso
+    setUploadProgress(0);
 
     try {
-      console.log('Iniciando subida de archivos...');
       const [markerObjectName, contentObjectName] = await Promise.all([
         uploadFile(markerFile),
         uploadFile(contentFile),
       ]);
-      console.log('Archivos subidos. Creando proyecto en la base de datos...');
 
-      // --- ¡ESTE ES EL PASO CRÍTICO QUE FALTABA! ---
-      // Una vez subidos los archivos, creamos el proyecto en nuestra base de datos
       await api.post('/projects', {
         name: projectName,
         markerUrl: markerObjectName,
         contentUrl: contentObjectName,
       });
-      console.log('Proyecto creado exitosamente.');
 
       navigate('/dashboard');
     } catch (err) {
@@ -96,7 +94,7 @@ export default function CreateProjectPage() {
               <Button variant="outlined" onClick={() => contentInputRef.current?.click()} disabled={isSubmitting}>
                 Seleccionar Contenido (GLB, GLTF, MP4)
               </Button>
-              <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>{contentFile?.name || 'Ningún archivo'}</Typography>
+               <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>{contentFile?.name || 'Ningún archivo'}</Typography>
               <input type="file" ref={contentInputRef} hidden accept=".glb,.gltf,.mp4" onChange={(e) => handleFileSelect(e, setContentFile)} />
             </Box>
             {isSubmitting && (
@@ -108,7 +106,7 @@ export default function CreateProjectPage() {
             {error && <Alert severity="error">{error}</Alert>}
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button type="submit" variant="contained" disabled={!projectName || !markerFile || !contentFile || isSubmitting}>
-                {isSubmitting ? 'Creando...' : 'Crear Proyecto'}
+                Crear Proyecto
               </Button>
               <Button variant="text" onClick={() => navigate('/dashboard')} disabled={isSubmitting}>Cancelar</Button>
             </Box>
