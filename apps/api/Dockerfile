@@ -1,27 +1,48 @@
 # --- Etapa 1: Build ---
+# Usamos node:18-slim (basado en Debian) para máxima compatibilidad
 FROM node:18-slim as builder
+
 WORKDIR /usr/src/app
 
-# Instala las herramientas de construcción necesarias
-RUN apt-get update && apt-get install -y python3 make g++
+# No necesitamos instalar herramientas extra de build como python/g++ aquí
+# a menos que una dependencia de npm lo requiera explícitamente.
+# Por ahora lo mantenemos simple.
 
 COPY package*.json ./
 RUN npm install
+
 COPY . .
+
+# Generamos el cliente aquí para verificar el schema durante el build
+RUN npx prisma generate
+
+# Construimos la aplicación
 RUN npm run build
 
+
 # --- Etapa 2: Production ---
+# Empezamos con una imagen fresca y limpia
 FROM node:18-slim
+
 WORKDIR /usr/src/app
 
-# ¡LÍNEA CLAVE! Instalamos la versión de libssl que Prisma 5 necesita en Debian
-RUN apt-get update && apt-get install -y openssl libssl1.1
+# Instalamos solo Nginx. OpenSSL ya viene en la imagen base de node:18-slim
+RUN apt-get update -y && apt-get install -y nginx
 
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Copiamos solo lo necesario para producción
+COPY --from=builder /usr/src/app/package*.json ./
+RUN npm install --only=production
+
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
+COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 
-# Para esta prueba final, vamos a ejecutar la app directamente sin Nginx
-# para asegurar que el problema de base está resuelto.
-EXPOSE 3000
-CMD ["npm", "run", "start:prod"]
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./entrypoint.sh .
+RUN chmod +x ./entrypoint.sh
+
+# Exponemos el puerto de Nginx
+EXPOSE 80
+
+# El script de arranque se encarga de todo
+CMD ["./entrypoint.sh"]
