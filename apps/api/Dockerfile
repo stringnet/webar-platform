@@ -1,40 +1,52 @@
+# Dockerfile Final, de Producción y Optimizado para la API
+
 # --- Etapa 1: Build ---
+# En esta etapa, instalamos todas las dependencias (incluidas las de desarrollo)
+# y construimos nuestra aplicación de NestJS.
 FROM node:18-slim as builder
 WORKDIR /usr/src/app
 
-# Declaramos que recibiremos la DATABASE_URL durante el build
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
-RUN apt-get update -y && apt-get install -y openssl
-
+# Copiamos package.json para aprovechar el caché de Docker
 COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
 
-# ¡LÍNEA CLAVE! Ejecutamos la migración aquí para crear las tablas
-RUN npm run prisma:deploy
+# Instalamos todas las dependencias
+RUN npm install
+
+# Copiamos el resto del código fuente
+COPY . .
+
+# Damos permisos de ejecución a todas las herramientas de node_modules/.bin
+RUN chmod +x /usr/src/app/node_modules/.bin/*
+
+# Construimos la aplicación. `nest build` se encargará de todo.
+RUN npm run build
 
 
 # --- Etapa 2: Production ---
+# Empezamos con una imagen fresca y limpia para producción.
 FROM node:18-slim
 WORKDIR /usr/src/app
 
-RUN apt-get update && apt-get install -y nginx openssl
+# Instalamos solo Nginx, ya que OpenSSL viene en esta imagen.
+RUN apt-get update -y && apt-get install -y nginx
 
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Copiamos el package.json para poder instalar solo las dependencias de producción.
+COPY --from=builder /usr/src/app/package*.json ./
+
+# Instalamos SOLAMENTE las dependencias de producción para una imagen final más ligera y segura.
+RUN npm install --only=production
+
+# Copiamos los archivos ya construidos y necesarios desde la etapa 'builder'.
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/prisma ./prisma
 
-# No necesitamos el schema de prisma en producción, solo el cliente generado
-COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
-
+# Copiamos nuestra configuración de Nginx y el script de arranque.
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./entrypoint.sh .
 RUN chmod +x ./entrypoint.sh
 
-# Exponemos el puerto de Nginx
+# Exponemos el puerto de Nginx, que es nuestra puerta de entrada.
 EXPOSE 80
 
-# El comando de inicio es nuestro script
+# El comando de inicio es nuestro script, que se encargará de todo.
 CMD ["./entrypoint.sh"]
