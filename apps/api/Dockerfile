@@ -6,12 +6,11 @@ WORKDIR /usr/src/app
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
-# Damos permisos para que los comandos de npm puedan ejecutarse
-RUN chmod +x /usr/src/app/node_modules/.bin/*
-
 COPY package*.json ./
 RUN npm install
 COPY . .
+# Damos permisos para que los comandos de npm puedan ejecutarse
+RUN chmod +x /usr/src/app/node_modules/.bin/*
 
 # Ejecutamos la migración DURANTE el build. Esto asegura que la DB esté lista.
 RUN npm run prisma:deploy
