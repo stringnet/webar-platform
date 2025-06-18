@@ -10,10 +10,10 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-# Damos permisos para que los comandos de npm puedan ejecutarse
+# Damos permisos a las herramientas de node_modules
 RUN chmod +x /usr/src/app/node_modules/.bin/*
 
-# Ejecutamos la migración DURANTE el build. Esto asegura que la DB esté lista.
+# Ejecutamos la migración DURANTE el build para crear las tablas
 RUN npm run prisma:deploy
 
 # Construimos la aplicación
@@ -21,11 +21,10 @@ RUN npm run build
 
 
 # --- Etapa 2: Production ---
-# Empezamos con una imagen fresca y limpia
 FROM node:18-slim
 WORKDIR /usr/src/app
 
-# Copiamos solo lo necesario para producción para una imagen final ligera y segura
+# Copiamos solo lo necesario para producción
 COPY --from=builder /usr/src/app/package*.json ./
 RUN npm install --only=production
 COPY --from=builder /usr/src/app/dist ./dist
@@ -34,7 +33,5 @@ COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 # Expone el puerto donde correrá NestJS
 EXPOSE 3000
 
-# --- LÍNEA CLAVE ACTUALIZADA ---
-# El comando final ahora ejecuta la migración y luego arranca la aplicación.
-# Lo hacemos aquí en lugar de en un entrypoint.sh para máxima simplicidad.
-CMD ["sh", "-c", "npm run prisma:deploy && npm run start:prod"]
+# El comando final para arrancar la aplicación en modo producción
+CMD ["npm", "run", "start:prod"]
