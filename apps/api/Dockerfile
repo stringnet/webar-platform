@@ -1,23 +1,35 @@
-# Dockerfile Definitivo para la API con Cloudinary
-
 # --- Etapa 1: Build ---
+# Usamos node:18-slim (basado en Debian) para máxima compatibilidad con Prisma
 FROM node:18-slim as builder
 WORKDIR /usr/src/app
+
+# Declaramos que recibiremos la DATABASE_URL durante el build para la migración
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
+# Instalamos las dependencias del sistema operativo
+RUN apt-get update -y && apt-get install -y openssl
 
 COPY package*.json ./
 RUN npm install
 COPY . .
-# Damos permisos para asegurar que los comandos se puedan ejecutar
+
+# Damos permisos para que los comandos de npm puedan ejecutarse
 RUN chmod +x /usr/src/app/node_modules/.bin/*
-# Ejecutamos la migración durante el build
+
+# Ejecutamos la migración DURANTE el build. Esto asegura que la DB esté lista.
 RUN npm run prisma:deploy
+
+# Construimos la aplicación
 RUN npm run build
 
+
 # --- Etapa 2: Production ---
+# Empezamos con una imagen fresca y limpia
 FROM node:18-slim
 WORKDIR /usr/src/app
 
-# Copiamos solo lo necesario para producción
+# Copiamos solo lo necesario para producción para una imagen final ligera y segura
 COPY --from=builder /usr/src/app/package*.json ./
 RUN npm install --only=production
 COPY --from=builder /usr/src/app/dist ./dist
@@ -26,5 +38,5 @@ COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 # Expone el puerto donde correrá NestJS
 EXPOSE 3000
 
-# Comando para arrancar la aplicación en modo producción
+# El comando final para arrancar la aplicación en modo producción
 CMD ["npm", "run", "start:prod"]
