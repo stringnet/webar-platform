@@ -9,6 +9,7 @@ ENV DATABASE_URL=$DATABASE_URL
 COPY package*.json ./
 RUN npm install
 COPY . .
+
 # Damos permisos para que los comandos de npm puedan ejecutarse
 RUN chmod +x /usr/src/app/node_modules/.bin/*
 
@@ -33,5 +34,7 @@ COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 # Expone el puerto donde correrá NestJS
 EXPOSE 3000
 
-# El comando final para arrancar la aplicación en modo producción
-CMD ["npm", "run", "start:prod"]
+# --- LÍNEA CLAVE ACTUALIZADA ---
+# El comando final ahora ejecuta la migración y luego arranca la aplicación.
+# Lo hacemos aquí en lugar de en un entrypoint.sh para máxima simplicidad.
+CMD ["sh", "-c", "npm run prisma:deploy && npm run start:prod"]
